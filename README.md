@@ -21,16 +21,16 @@ This plugin allows you to load and use custom web components within your Obsidia
 
 ```html
     ```webcomponents
-        <obsidian-accordion>
-            <obsidian-accordion-item title="First Item">
-                Content for the first item.
-            </obsidian-accordion-item>
-            <obsidian-accordion-item title="Second Item" open>
-                Content for the second item. <obsidian-button>Click Me</obsidian-button>
-            </obsidian-accordion-item>
-            <!-- Use your custom components here -->
-            <my-element>Hello from my component!</my-element>
-        </obsidian-accordion>
+    <obsidian-accordion>
+        <obsidian-accordion-item title="First Item">
+            Content for the first item.
+        </obsidian-accordion-item>
+        <obsidian-accordion-item title="Second Item" open>
+            Content for the second item. <obsidian-button>Click Me</obsidian-button>
+        </obsidian-accordion-item>
+        <!-- Use your custom components here -->
+        <my-element>Hello from my component!</my-element>
+    </obsidian-accordion>
     ```
 ```
 
