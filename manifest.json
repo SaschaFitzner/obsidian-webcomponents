@@ -1,0 +1,10 @@
+{
+	"id": "obsidian-webcomponents",
+	"name": "Webcomponents",
+	"version": "1.0.0",
+	"minAppVersion": "1.0.0",
+	"description": "Loads and enables standard web components from a vault folder.",
+	"author": "Roo AI Assistant",
+	"authorUrl": "",
+	"isDesktopOnly": false
+}
