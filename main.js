@@ -14,6 +14,15 @@ class WebcomponentsPlugin extends Plugin {
 
     async onload() {
         console.log('Loading Webcomponents plugin');
+        // Use a global flag to prevent loading in the same window session across enable/disable
+        if (window.__webcomponents_plugin_scripts_loaded) {
+            console.log("Webcomponents: Scripts already loaded in this window session. Skipping load on enable.");
+            // Ensure scripts are removed if they somehow exist from a failed previous load?
+            // Or assume they are correctly loaded if flag is true. Let's assume they are loaded.
+            // We still need to register the processor etc., so don't return early from onload.
+        } else {
+             console.log("Webcomponents: Scripts not yet loaded in this window session.");
+        }
 
         // Load settings first
         await this.loadSettings();
@@ -23,8 +32,17 @@ class WebcomponentsPlugin extends Plugin {
 
         // Defer script loading until layout is ready
         this.app.workspace.onLayoutReady(async () => {
-            console.log("Workspace layout ready, loading component scripts...");
-            await this.loadComponentScripts();
+            console.log("Workspace layout ready, attempting to load component scripts if needed...");
+            // Only load if the global flag isn't set
+            if (!window.__webcomponents_plugin_scripts_loaded) {
+                await this.loadComponentScripts();
+            } else {
+                 console.log("Webcomponents: Skipping script load on layout ready as global flag is set.");
+                 // Ensure componentScripts array is populated if plugin was disabled/enabled
+                 // This might be needed if other parts rely on this array, though removeComponentScripts clears it.
+                 // Let's re-query the DOM for our scripts if the flag is set.
+                 this.findExistingScripts();
+            }
         });
 
         // Register the code block processor immediately
@@ -42,7 +60,13 @@ class WebcomponentsPlugin extends Plugin {
     }
 
     async loadComponentScripts() {
-        // Clear previously injected scripts first
+        // Double check the global flag here as well, although onload should prevent this call if set.
+        if (window.__webcomponents_plugin_scripts_loaded) {
+             console.warn("Webcomponents: loadComponentScripts called but global flag is already set. Skipping.");
+             return;
+        }
+        console.log("Webcomponents: Proceeding with script loading..."); // Add log for clarity
+        // Clear previously injected scripts first (still useful if loading fails midway?)
         this.removeComponentScripts();
         let filesToLoad = [];
 
@@ -113,6 +137,9 @@ class WebcomponentsPlugin extends Plugin {
         for (const fileData of allFilesToInject) {
              this.injectScript(fileData.path, fileData.content);
         }
+        // Set the global flag ONLY after successful injection of all scripts
+        window.__webcomponents_plugin_scripts_loaded = true;
+        console.log("Webcomponents: Script loading finished and global flag set.");
     }
 
     // Helper function to recursively find JS files using Vault API (for User Components)
@@ -131,6 +158,11 @@ class WebcomponentsPlugin extends Plugin {
     }
 
     injectScript(filePath, content) {
+        // Check if component is already defined BEFORE injecting the script containing its class definition
+        // This requires parsing the tag name from the file content or path, which is fragile.
+        // Example: Extract class name like 'ObsidianButton' and check customElements.get('obsidian-button')
+        // Let's stick to the global flag approach for now, as checking inside injectScript is complex.
+
         console.log(`Webcomponents: Injecting script ${filePath}`); // Log injection attempt
         // console.log(`Webcomponents: Injecting script ${filePath}`); // Keep this less verbose
         const scriptElement = document.createElement('script');
@@ -146,9 +178,10 @@ class WebcomponentsPlugin extends Plugin {
         this.componentScripts.forEach(script => script.remove());
         this.componentScripts = []; // Clear the array
     }
-
     onunload() {
         console.log('Unloading Webcomponents plugin');
+        // DO NOT reset the global flag here. It should persist for the window session.
+        // Only remove the script elements from the DOM.
         this.removeComponentScripts(); // Clean up added scripts
     }
 
@@ -158,12 +191,23 @@ class WebcomponentsPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
-        // Reload components after saving settings
+        // Reload components after saving settings - need to reset the flag first
+        console.log("Webcomponents: Settings saved, resetting load flag and reloading scripts.");
+        window.__webcomponents_plugin_scripts_loaded = false; // Allow reload after settings change
         await this.loadComponentScripts();
     }
-}
+    // Helper to find existing script tags if plugin is re-enabled
+    findExistingScripts() {
+        this.componentScripts = []; // Clear array first
+        const existingScripts = document.head.querySelectorAll('script[data-webcomponent-source]');
+        existingScripts.forEach(script => {
+            this.componentScripts.push(script);
+        });
+        console.log(`Webcomponents: Found ${this.componentScripts.length} existing script tags on re-enable.`);
+    }
+} // End of WebcomponentsPlugin class
 
-// Settings Tab Class
+// Settings Tab Class (Ensure this is outside the main plugin class)
 class WebcomponentsSettingTab extends PluginSettingTab {
     plugin;
 
@@ -185,7 +229,7 @@ class WebcomponentsSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.userComponentsPath)
                 .onChange(async (value) => {
                     this.plugin.settings.userComponentsPath = value.trim();
-                    await this.plugin.saveSettings();
+                    await this.plugin.saveSettings(); // saveSettings now handles flag reset + reload
                 }));
     }
 }
