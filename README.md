@@ -19,18 +19,20 @@ This plugin allows you to load and use custom web components within your Obsidia
     *   Create your web component files (e.g., `my-components/my-element.js`) defining your custom elements using standard Web Component APIs (`customElements.define(...)`).
 4.  **Use in Notes:** Create a `webcomponents` code block in your Markdown notes and write the HTML that uses your loaded components:
 
-    &#x60;&#x60;&#x60;webcomponents
-    <obsidian-accordion>
-      <obsidian-accordion-item title="First Item">
-        Content for the first item.
-      </obsidian-accordion-item>
-      <obsidian-accordion-item title="Second Item" open>
-        Content for the second item. <obsidian-button>Click Me</obsidian-button>
-      </obsidian-accordion-item>
-      <!-- Use your custom components here -->
-      <my-element>Hello from my component!</my-element>
-    </obsidian-accordion>
-    &#x60;&#x60;&#x60;
+```html
+    ```webcomponents
+        <obsidian-accordion>
+        <obsidian-accordion-item title="First Item">
+            Content for the first item.
+        </obsidian-accordion-item>
+        <obsidian-accordion-item title="Second Item" open>
+            Content for the second item. <obsidian-button>Click Me</obsidian-button>
+        </obsidian-accordion-item>
+        <!-- Use your custom components here -->
+        <my-element>Hello from my component!</my-element>
+        </obsidian-accordion>
+    ```
+```
 
 The plugin will load the necessary JavaScript files and render the HTML within the code block.
 
